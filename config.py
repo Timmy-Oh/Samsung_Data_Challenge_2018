@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 test_cols = ['주야', '요일','사망자수', '사상자수', '중상자수', '경상자수', '부상신고자수', '발생지시도',
              '발생지시군구', '사고유형_대분류', '사고유형_중분류', '법규위반', '도로형태_대분류', '도로형태',
@@ -90,3 +91,31 @@ kv_map['당사자종별_1당_대분류'] = {'N':0, '승용차':1, '자전거':2,
 kv_map['당사자종별_2당_대분류'] = {'N':0, '승합차':1, '보행자':2, '없음':3, '화물차':4, '특수차':5,
                      '승용차':6, '원동기장치자전거':7, '이륜차':8, '농기계':9, '자전거':10,
                      '사륜오토바이(ATV)':11, '건설기계':12, '불명':13, '열차':14}
+
+
+cont_min = np.array([-1, -1, -1, -1, -1])
+cont_max = np.array([10, 100, 54, 62, 67])
+
+
+keep_prop = 0.7
+train_size = 20480
+cate_len = len(cate_cols)
+cont_len = len(cont_cols)
+cate_lens = [len(kv_map[k]) for k in cate_cols]
+
+
+dir_ckpt = '.\\ckpt'
+
+l1_size = 256
+l2_size = 32
+cate_out_size = sum(cate_lens)
+cont_out_size = cont_len
+epochs = 200
+batch_size = 1024
+replace_cont = -1
+learning_rate = 0.0023
+verbose = 0
+
+dir_test = './test_export'
+path_test = './test_export/test_export.csv'
+path_result = './test_export/result.csv'
