@@ -30,17 +30,19 @@ def build_model(config):
     l21 = tf.contrib.layers.fully_connected(concat_all, config.l1_size)
     l22 = tf.contrib.layers.fully_connected(l21, config.l2_size)
     
-    l2 = tf.concat([l12, l22], axis=-1)
+
     #logits
     logit_cates = [tf.contrib.layers.fully_connected(l1, length, activation_fn = None) for length in config.cate_lens]
+    pred_cates = [tf.nn.softmax(logit) for logit in logit_cates]
+    pred_cate = tf.concat(pred_cates, axis=-1)
+    
+    l2 = tf.concat([l12, l22, pred_cate], axis=-1)
     logit_cont1 = tf.contrib.layers.fully_connected(l12, config.cont_out_size, activation_fn = None)
-    logit_cont2 = tf.contrib.layers.fully_connected(l2, config.cont_out_size, activation_fn = None)
+    logit_cont2 = tf.contrib.layers.fully_connected(l22, config.cont_out_size, activation_fn = None)
     logit_cont3 = tf.contrib.layers.fully_connected(l2, config.cont_out_size, activation_fn = None)
     logit_cont = tf.reduce_mean([logit_cont1, logit_cont2, logit_cont3], axis=0)
     
-    #predictions
-    pred_cates = [tf.nn.softmax(logit) for logit in logit_cates]
-    pred_cate = tf.concat(pred_cates, axis=-1)
+
     pred_cont = logit_cont
 
     #losses

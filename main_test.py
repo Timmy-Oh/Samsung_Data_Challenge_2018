@@ -87,7 +87,7 @@ df_test_out = pd.read_csv(config.path_test, encoding='cp949')
 df_result = pd.read_csv('./data/result_kor.csv', encoding='cp949')
 
 result_list = []
-for r, c in zip(df_result.열, df_result.행):
+for r, c in zip(df_result.행, df_result.열):
     result_list.append(df_test_out.iloc[r-2][config.cols_dict[c]])
 
 df_result.값 = result_list
