@@ -114,7 +114,7 @@ epochs = 200
 batch_size = 1024
 replace_cont = -1
 learning_rate = 0.0023
-verbose = 0
+verbose = 1
 
 dir_test = './test_export'
 path_test = './test_export/test_export.csv'
