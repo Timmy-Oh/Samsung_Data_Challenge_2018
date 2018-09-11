@@ -110,10 +110,10 @@ l1_size = 256
 l2_size = 32
 cate_out_size = sum(cate_lens)
 cont_out_size = cont_len
-epochs = 200
+epochs = 1000
 batch_size = 1024
 replace_cont = -1
-learning_rate = 0.0023
+learning_rate = 0.0017
 verbose = 1
 
 dir_test = './test_export'

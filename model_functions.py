@@ -12,6 +12,7 @@ def build_model(config):
     inp_cont_tf = tf.placeholder(dtype=tf.int32, shape=[None, config.cont_len], name='continuous_tf_input_layer')
     inp_cate_y = tf.placeholder(dtype=tf.int32, shape=[None, config.cate_len], name='categorical_input_y_layer')
     inp_cont_y = tf.placeholder(dtype=tf.float32, shape=[None, config.cont_len], name='continuous_input_y_layer')
+    kp = tf.placeholder(dtype=tf.float32, shape=[], name='kp')
     
     #embedding
     cate_oh = [tf.one_hot(inp_cate[:, i], depth=config.cate_lens[i]) for i in range(len(config.cate_cols))]
@@ -25,7 +26,8 @@ def build_model(config):
     concat_all = tf.concat([concat_cate, inp_cont, concat_cont_tf], axis=-1)
     
     #hidden layer
-    l1 = tf.contrib.layers.fully_connected(concat_all, config.l1_size)
+    l1_nd = tf.contrib.layers.fully_connected(concat_all, config.l1_size)
+    l1 = tf.nn.dropout(l1_nd, kp)
     l12 = tf.contrib.layers.fully_connected(l1, config.l2_size)
     l21 = tf.contrib.layers.fully_connected(concat_all, config.l1_size)
     l22 = tf.contrib.layers.fully_connected(l21, config.l2_size)
@@ -41,7 +43,6 @@ def build_model(config):
     logit_cont2 = tf.contrib.layers.fully_connected(l22, config.cont_out_size, activation_fn = None)
     logit_cont3 = tf.contrib.layers.fully_connected(l2, config.cont_out_size, activation_fn = None)
     logit_cont = tf.reduce_mean([logit_cont1, logit_cont2, logit_cont3], axis=0)
-    
 
     pred_cont = logit_cont
 
@@ -56,11 +57,11 @@ def build_model(config):
     optimizer = tf.train.AdamOptimizer(learning_rate=config.learning_rate)
     train_op = optimizer.minimize(loss_op)
     
-    return loss_op, loss_cate_op, loss_cont_op, train_op, inp_cate, inp_cont, inp_cont_scale, inp_cont_tf, inp_cate_y, inp_cont_y, pred_cate, pred_cont
+    return loss_op, loss_cate_op, loss_cont_op, train_op, inp_cate, inp_cont, inp_cont_scale, inp_cont_tf, inp_cate_y, inp_cont_y, pred_cate, pred_cont, kp
 
 def run_session(sess, max_step, datas, config, mdl, mode=1):
     total_loss = np.array([0.0, 0.0, 0.0])
-    loss_op, loss_cate_op, loss_cont_op, train_op, inp_cate, inp_cont, inp_cont_scale, inp_cont_tf, inp_cate_y, inp_cont_y, pred_cate, pred_cont = mdl
+    loss_op, loss_cate_op, loss_cont_op, train_op, inp_cate, inp_cont, inp_cont_scale, inp_cont_tf, inp_cate_y, inp_cont_y, pred_cate, pred_cont, kp = mdl
 
     #train
     if mode ==1:
@@ -80,7 +81,8 @@ def run_session(sess, max_step, datas, config, mdl, mode=1):
                                                                                            inp_cont_scale:droped_cont_scaled[start_idx:start_idx+config.batch_size],
                                                                                            inp_cont_tf:cont_mask[start_idx:start_idx+config.batch_size],
                                                                   inp_cate_y:datas[0].values[start_idx:start_idx+config.batch_size],
-                                                                  inp_cont_y:datas[1].values[start_idx:start_idx+config.batch_size]})
+                                                                  inp_cont_y:datas[1].values[start_idx:start_idx+config.batch_size],
+                                                                  kp:0.7})
             
             total_loss += loss_[:-1]
         total_loss /= max_step
@@ -101,7 +103,8 @@ def run_session(sess, max_step, datas, config, mdl, mode=1):
                                                                                  inp_cont_tf:config.vaild_cont_mask[start_idx:start_idx+config.batch_size],
                                                                                  
                                                    inp_cate_y:datas[0].values[start_idx:start_idx+config.batch_size],
-                                                   inp_cont_y:datas[1].values[start_idx:start_idx+config.batch_size]})
+                                                   inp_cont_y:datas[1].values[start_idx:start_idx+config.batch_size],
+                                                   kp:1.0})
             
             total_loss += loss_
         total_loss /= max_step
@@ -122,7 +125,8 @@ def run_session(sess, max_step, datas, config, mdl, mode=1):
                                               feed_dict = {inp_cate:droped_valid_cate[start_idx:start_idx+config.batch_size], 
                                                            inp_cont:droped_valid_cont[start_idx:start_idx+config.batch_size],
                                                            inp_cont_scale:droped_valid_cont_scaled[start_idx:start_idx+config.batch_size],
-                                                           inp_cont_tf:config.vaild_test_cont_mask[start_idx:start_idx+config.batch_size]})
+                                                           inp_cont_tf:config.vaild_test_cont_mask[start_idx:start_idx+config.batch_size],
+                                                           kp:1.0})
             preds_cate.append(pred_cate_)
             preds_cont.append(pred_cont_)
             
@@ -142,7 +146,8 @@ def run_session(sess, max_step, datas, config, mdl, mode=1):
                                               feed_dict = {inp_cate:test_cate[start_idx:start_idx+config.batch_size], 
                                                            inp_cont:test_cont[start_idx:start_idx+config.batch_size],
                                                            inp_cont_scale:test_cont_scaled[start_idx:start_idx+config.batch_size],
-                                                           inp_cont_tf:config.test_cont_mask[start_idx:start_idx+config.batch_size]})
+                                                           inp_cont_tf:config.test_cont_mask[start_idx:start_idx+config.batch_size],
+                                                           kp:1.0})
             preds_cate.append(pred_cate_)
             preds_cont.append(pred_cont_)
             
